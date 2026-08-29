@@ -10,6 +10,17 @@ repositories {
 }
 
 dependencies {
+    // --- Web Framework & JSON parsing ---
+    implementation 'io.javalin:javalin:6.1.3'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+
+    // --- Database connection pool & driver ---
+    implementation 'com.zaxxer:HikariCP:5.1.0'
+    implementation 'org.postgresql:postgresql:42.7.2'
+
+    // --- Logging ---
+    implementation 'org.slf4j:slf4j-simple:2.0.12'
+
     testImplementation platform('org.junit:junit-bom:6.0.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
