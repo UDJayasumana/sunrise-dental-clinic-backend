@@ -2,6 +2,8 @@ package database;
 
 import com.zaxxer.hikari.HikariConfig;
 
+import java.sql.ResultSet;
+
 public class PostgresDatabase extends BaseDatabase {
 
     static {
@@ -15,4 +17,5 @@ public class PostgresDatabase extends BaseDatabase {
         config.setPassword("123");
         return config;
     }
+
 }
