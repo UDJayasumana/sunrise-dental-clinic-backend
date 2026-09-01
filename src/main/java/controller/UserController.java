@@ -16,7 +16,7 @@ public class UserController {
     }
 
 
-    public void post(Context ctx) {
+    public void registerUser(Context ctx) {
         try {
             User incomingUser = ctx.bodyAsClass(User.class);
 
