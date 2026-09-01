@@ -1,17 +1,31 @@
 package org.example;
 
+import controller.UserController;
+import database.BaseDatabase;
+import database.PostgresDatabase;
+import io.javalin.Javalin;
+import repository.UserRepository;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    static void main() {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        IO.println(String.format("Hello and welcome!"));
+    public static void main(String[] args) {
+        try{
+            BaseDatabase db = new PostgresDatabase();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            IO.println("i = " + i);
+            UserRepository userRepo = new UserRepository(db);
+            UserController userController = new UserController(userRepo);
+
+            Javalin app = Javalin.create().start(3000);
+
+            app.post("/api/users", userController::post);
+
+            System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 }
