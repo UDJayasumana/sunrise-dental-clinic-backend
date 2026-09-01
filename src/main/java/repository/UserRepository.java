@@ -2,6 +2,7 @@ package repository;
 
 import classes.User;
 import database.BaseDatabase;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,11 +28,16 @@ public class UserRepository {
 
         existsByEmail(user.getEmail());
 
-        String sql = "INSERT INTO users (name, email) VALUES (?, ?)";
+        //Hash the password using BCrypt securely
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        //logger.info("hashed pass: " + hashedPassword);
+
+        String sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
         try(PreparedStatement stmt = connection.prepareStatement(sql)){
 
             stmt.setString(1, user.getName());
             stmt.setString(2, user.getEmail());
+            stmt.setString(3, hashedPassword);
             stmt.executeUpdate();
             System.out.println("Inserted successfully!");
         }
@@ -57,6 +63,32 @@ public class UserRepository {
                 return rs.next();
             }
         }
+
+    }
+
+    public User findByEmail(String email) throws SQLException {
+        String cleanedEmail = email.trim().toLowerCase();
+        String sql = "SELECT name, email, password FROM users WHERE email = ? LIMIT 1";
+
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
+            pstmt.setString(1, cleanedEmail);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                //logger.info("Data: " + rs);
+                if (rs.next()) {
+                    User user = new User();
+                    user.setName(rs.getString("name"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPassword(rs.getString("password"));
+                    return user;
+                }
+            }
+
+        }catch (SQLException e){
+            throw new RuntimeException("Error finding user by email: " + e.getMessage(), e);
+        }
+        return null;
 
     }
 

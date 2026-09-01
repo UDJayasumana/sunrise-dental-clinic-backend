@@ -18,7 +18,8 @@ public class Main {
 
             Javalin app = Javalin.create().start(3000);
 
-            app.post("/api/users", userController::registerUser);
+            app.post("/api/register", userController::registerUser);
+            app.post("/api/login", userController::loginUser);
 
             System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
 
