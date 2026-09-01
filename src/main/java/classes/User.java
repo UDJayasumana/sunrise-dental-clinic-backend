@@ -13,4 +13,15 @@ public class User {
     public void setEmail(String email) {this.email = email;}
 
 
+    public void validate()
+    {
+        if(name == null || name.trim().isEmpty()){
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+
+        if(email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")){
+            throw new IllegalArgumentException("A valid email address is required.");
+        }
+    }
+
 }

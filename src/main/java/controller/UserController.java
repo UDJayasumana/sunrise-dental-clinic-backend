@@ -5,6 +5,8 @@ import classes.User;
 import io.javalin.http.Context;
 import repository.UserRepository;
 
+import java.sql.PreparedStatement;
+
 public class UserController {
     private final UserRepository userRepository;
 
@@ -17,12 +19,22 @@ public class UserController {
     public void post(Context ctx) {
         try {
             User incomingUser = ctx.bodyAsClass(User.class);
+
+            //validate user
+            incomingUser.validate();
+
             userRepository.post(incomingUser);
+
             ctx.status(201).json("{\"message\": \"Resource created successfully\"}");
+
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json("{\"error\": \"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+
 
 //    public void put(Context ctx) {
 //        try {
