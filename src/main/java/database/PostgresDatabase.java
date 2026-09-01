@@ -2,8 +2,6 @@ package database;
 
 import com.zaxxer.hikari.HikariConfig;
 
-import java.sql.ResultSet;
-
 public class PostgresDatabase extends BaseDatabase {
 
     static {

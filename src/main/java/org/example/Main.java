@@ -1,13 +1,10 @@
 package org.example;
 
-import com.sun.net.httpserver.HttpServer;
 import controller.UserController;
 import database.BaseDatabase;
 import database.PostgresDatabase;
 import io.javalin.Javalin;
 import repository.UserRepository;
-
-import java.net.InetSocketAddress;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.

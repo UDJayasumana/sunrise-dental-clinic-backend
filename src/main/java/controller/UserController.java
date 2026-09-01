@@ -24,42 +24,42 @@ public class UserController {
         }
     }
 
-    public void put(Context ctx) {
-        try {
-            String payload = ctx.body();
-           // userRepository.put(payload);
-            ctx.status(200).json("{\"message\": \"Resource updated successfully\"}");
-        } catch (Exception e) {
-            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
+//    public void put(Context ctx) {
+//        try {
+//            String payload = ctx.body();
+//           // userRepository.put(payload);
+//            ctx.status(200).json("{\"message\": \"Resource updated successfully\"}");
+//        } catch (Exception e) {
+//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+//        }
+//    }
 
-    public void patch(Context ctx) {
-        try {
-            String payload = ctx.body();
-            //userRepository.patch(payload);
-            ctx.status(200).json("{\"message\": \"Resource patched successfully\"}");
-        } catch (Exception e) {
-            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
+//    public void patch(Context ctx) {
+//        try {
+//            String payload = ctx.body();
+//            //userRepository.patch(payload);
+//            ctx.status(200).json("{\"message\": \"Resource patched successfully\"}");
+//        } catch (Exception e) {
+//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+//        }
+//    }
 
-    public void delete(Context ctx) {
-        try {
-            String idParam = ctx.pathParam("id");
-
-            Object id;
-            try {
-                id = Integer.parseInt(idParam);
-            } catch (NumberFormatException e) {
-                id = idParam;
-            }
-
-            //userRepository.delete(id);
-            ctx.status(200).json("{\"message\": \"Resource deleted successfully for ID: " + id + "\"}");
-        } catch (Exception e) {
-            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
+//    public void delete(Context ctx) {
+//        try {
+//            String idParam = ctx.pathParam("id");
+//
+//            Object id;
+//            try {
+//                id = Integer.parseInt(idParam);
+//            } catch (NumberFormatException e) {
+//                id = idParam;
+//            }
+//
+//            //userRepository.delete(id);
+//            ctx.status(200).json("{\"message\": \"Resource deleted successfully for ID: " + id + "\"}");
+//        } catch (Exception e) {
+//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+//        }
+//    }
 
 }
