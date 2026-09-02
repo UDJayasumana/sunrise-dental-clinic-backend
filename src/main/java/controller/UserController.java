@@ -2,13 +2,15 @@ package controller;
 
 
 import classes.User;
+import exception.SunriseException;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
 import org.mindrot.jbcrypt.BCrypt;
 import repository.UserRepository;
 import utility.JwtUtil;
 
-import java.sql.PreparedStatement;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class UserController {
@@ -31,10 +33,22 @@ public class UserController {
 
             userRepository.post(incomingUser);
 
-            ctx.status(201).json("{\"message\": \"Resource created successfully\"}");
 
-        } catch (IllegalArgumentException e) {
-            ctx.status(400).json("{\"error\": \"" + e.getMessage() + "\"}");
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", 201);
+            response.put("message", "REGISTER_SUCCESS");
+            response.put("data", null); // This will render as `null` in JSON
+
+            ctx.status(201).json(response);
+
+        } catch (SunriseException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", e.getStatusCode());
+            response.put("message", e.getMessage());
+            response.put("errors", Map.of(e.getField(), e.getValue()));
+
+            ctx.status(e.getStatusCode()).json(response);
+
         } catch (Exception e) {
             ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
         }
