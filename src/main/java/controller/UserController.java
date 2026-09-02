@@ -29,7 +29,7 @@ public class UserController {
             User incomingUser = ctx.bodyAsClass(User.class);
 
             //validate user
-            incomingUser.validate();
+            incomingUser.validate(true);
 
             userRepository.post(incomingUser);
 
@@ -58,12 +58,20 @@ public class UserController {
         try{
             User loginAttempt = ctx.bodyAsClass(User.class);
 
+            loginAttempt.validate(false);
+
             //Find user in the database
             User existingUser = userRepository.findByEmail(loginAttempt.getEmail());
 
             if(existingUser == null){
                 //System.out.println("DEBUG: User not found in database!");
-                ctx.status(401).json("{\"error\": \"Invalid email.\"}");
+                //ctx.status(401).json("{\"error\": \"Invalid email.\"}");
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 404);
+                response.put("message", "Not Found");
+                response.put("errors", Map.of("email", "Email not found."));
+
+                ctx.status(404).json(response);
                 return;
             }
 
@@ -74,7 +82,14 @@ public class UserController {
             );
             logger.info("Password match state: " + passwordMatches);
             if(!passwordMatches){
-                ctx.status(401).json("{\"error\": \"Invalid password.\"}");
+                //ctx.status(401).json("{\"error\": \"Invalid password.\"}");
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 400);
+                response.put("message", "Validation failed");
+                response.put("errors", Map.of("password", "Invalid password."));
+
+                ctx.status(400).json(response);
                 return;
             }
 
@@ -95,8 +110,14 @@ public class UserController {
 
             ctx.status(200).json("{\"message\": \"Login successful\"}");
 
-        }catch (IllegalArgumentException e) {
-            ctx.status(400).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }catch (SunriseException e) {
+            //ctx.status(400).json("{\"error\": \"" + e.getMessage() + "\"}");
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", e.getStatusCode());
+            response.put("message", e.getMessage());
+            response.put("errors", Map.of(e.getField(), e.getValue()));
+
+            ctx.status(e.getStatusCode()).json(response);
         }catch (Exception e) {
             ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
         }

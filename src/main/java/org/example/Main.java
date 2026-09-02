@@ -30,7 +30,7 @@ public class Main {
 
 
             app.post("/api/signup", userController::registerUser);
-            app.post("/api/login", userController::loginUser);
+            app.post("/api/signin", userController::loginUser);
 
             System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
 
