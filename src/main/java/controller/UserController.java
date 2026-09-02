@@ -97,7 +97,7 @@ public class UserController {
             String token = JwtUtil.generateToken(existingUser.getEmail());
 
             // 1. Create the cookie object using name and value
-            Cookie myCookie = new Cookie("srdTK", token);
+            Cookie myCookie = new Cookie("srdAT", token);
 
             // 2. Set the additional attributes using its setter methods
             myCookie.setMaxAge(86400);
@@ -108,7 +108,12 @@ public class UserController {
             //Pass the Cookie object to the context
             ctx.cookie(myCookie);
 
-            ctx.status(200).json("{\"message\": \"Login successful\"}");
+            //Send the login success response
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", 200);
+            response.put("message", "LOGIN_SUCCESS");
+            response.put("data", null);
+            ctx.status(200).json(response);
 
         }catch (SunriseException e) {
             //ctx.status(400).json("{\"error\": \"" + e.getMessage() + "\"}");
