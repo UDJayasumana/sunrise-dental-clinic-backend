@@ -16,9 +16,21 @@ public class Main {
             UserRepository userRepo = new UserRepository(db);
             UserController userController = new UserController(userRepo);
 
-            Javalin app = Javalin.create().start(3000);
+            // Configure Javalin with CORS plugin enabled
+            Javalin app = Javalin.create(config -> {
+                config.bundledPlugins.enableCors(cors -> {
+                    cors.addRule(it -> {
+                        // Replace with your actual frontend URL (e.g., Vite is usually 5173, Create React App is 3000 or 3001)
+                        it.allowHost("http://localhost:5173", "http://localhost:3001");
+                        it.allowCredentials = true;
+                    });
+                });
+            }).start(3000);
 
-            app.post("/api/users", userController::post);
+
+
+            app.post("/api/signup", userController::registerUser);
+            app.post("/api/signin", userController::loginUser);
 
             System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
 
