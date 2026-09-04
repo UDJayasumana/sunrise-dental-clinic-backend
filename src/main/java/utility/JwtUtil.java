@@ -64,4 +64,15 @@ public class JwtUtil {
         return claims.getSubject();
     }
 
+    public static boolean isValidUUID(String str) {
+        if (str == null) {
+            return false;
+        }
+        try {
+            UUID.fromString(str);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
 }

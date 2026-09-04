@@ -29,6 +29,8 @@ public class RefreshToken {
     public boolean isRevoked() {return revoked;}
     public void setRevoked(boolean revoked) {this.revoked = revoked;}
 
+    public RefreshToken(){};
+
     public RefreshToken(UUID token, String userId, Timestamp expiryDate, boolean revoked)
     {
         this.token = token;

@@ -36,6 +36,7 @@ public class Main {
             app.post("/api/signin", userController::loginUser);
             app.get("/api/logout", userController::logoutUser);
             app.post("/api/verify", userController::verifyToken);
+            app.get("/api/refresh", userController::refreshTokens);
             app.get("/api/user/{id}", userController::getUserById);
             app.post("/api/appointment", appointmentController::createAppointment);
             app.get("/api/appointment", appointmentController::getAllAppointments);

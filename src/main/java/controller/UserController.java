@@ -222,4 +222,45 @@ public class UserController {
         ctx.status(200).json(response);
     }
 
+    public void refreshTokens(Context ctx)
+    {
+        try{
+            String refreshToken = ctx.cookie("srdRT");
+
+            RefreshToken reToken = null;
+
+            if(refreshToken != null)
+            {
+                reToken = refreshTokenRepository.refreshTokens(UUID.fromString(refreshToken));
+            }
+
+            if(reToken != null)
+            {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 200);
+                response.put("message", "TOKENS_REFRESHED");
+                response.put("data", null);
+                ctx.status(200).json(response);
+            }
+            else
+            {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 401);
+                response.put("message", "REFRESH_TOKEN_EXPIRED");
+                response.put("data", null);
+                ctx.status(401).json(response);
+            }
+
+        }catch (SunriseException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", e.getStatusCode());
+            response.put("message", e.getMessage());
+            response.put("errors", Map.of(e.getField(), e.getValue()));
+
+            ctx.status(e.getStatusCode()).json(response);
+        }catch(Exception e){
+            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
 }

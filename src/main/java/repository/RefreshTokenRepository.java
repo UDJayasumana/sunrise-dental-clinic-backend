@@ -1,12 +1,19 @@
 package repository;
 
 import classes.RefreshToken;
+import classes.User;
 import database.BaseDatabase;
+import io.javalin.http.NotFoundResponse;
+import utility.JwtUtil;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.io.FileNotFoundException;
+import java.io.InvalidObjectException;
+import java.sql.*;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.MissingResourceException;
+import java.util.UUID;
 
 public class RefreshTokenRepository {
     private final BaseDatabase database;
@@ -43,6 +50,58 @@ public class RefreshTokenRepository {
             System.out.println("Error deleting tokens: " + e.getMessage());
             throw new Exception("Could not delete existing tokens for user.");
         }
+    }
+
+    public RefreshToken refreshTokens(UUID token) throws Exception
+    {
+        String sql = "SELECT id, token, user_Id, expiry_date, revoked FROM refreshtokens WHERE token = ?";
+
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)){
+
+            pstmt.setObject(1, token);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+
+                    RefreshToken refreshToken = new RefreshToken();
+
+                    refreshToken.setId(rs.getLong("id"));
+                    refreshToken.setToken((UUID) rs.getObject("token"));
+                    refreshToken.setUserId(rs.getString("user_Id"));
+                    refreshToken.setExpiryDate(Timestamp.valueOf(rs.getString("expiry_date")));
+                    refreshToken.setRevoked(rs.getBoolean("revoked"));
+
+                    System.out.println("RT Token: " + refreshToken.getToken());
+                    System.out.println("RT ExpiryDate: " + refreshToken.getExpiryDate());
+                    System.out.println("RT UserID: " + refreshToken.getUserId());
+
+                    if(JwtUtil.isValidUUID(refreshToken.getToken().toString()))
+                    {
+                        if (!(refreshToken.getExpiryDate().before(new Date()) || refreshToken.getExpiryDate().equals(new Date()))){
+                            String tempRefreshToken = JwtUtil.generateRefreshToken();
+
+                            Date expiryDate = Date.from(Instant.now().plus(3, ChronoUnit.DAYS));
+                            Timestamp expiryDateTimestamp = new Timestamp(expiryDate.getTime());
+
+                            deleteByUserId(refreshToken.getUserId());
+                            RefreshToken newRefreshedToken = new RefreshToken(UUID.fromString(tempRefreshToken), String.valueOf(refreshToken.getUserId()), expiryDateTimestamp, false);
+                            post(newRefreshedToken);
+
+                            return newRefreshedToken;
+                        }
+                    }
+
+                }
+
+
+            }
+
+        } catch (Exception e) {
+          //  System.out.println("Error deleting tokens: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+        return null;
     }
 
 }
