@@ -180,7 +180,7 @@ public class UserController {
             if (user != null) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("statusCode", 200);
-                response.put("message", "USER_FETCHED");
+                response.put("message", "USER_FOUND");
                 response.put("data", user);
 
                 ctx.status(200).json(response);

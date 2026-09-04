@@ -30,7 +30,7 @@ public class AppointmentController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("statusCode", 201);
-            response.put("message", "APPOINTMENT_CREATED");
+            response.put("message", "APPOINTMENT_CREATED_SUCCESS");
             response.put("data", null); // This will render as `null` in JSON
 
             ctx.status(201).json(response);
@@ -50,7 +50,7 @@ public class AppointmentController {
 
     public void getAppointmentById(Context ctx){
         try{
-            long id = ctx.pathParamAsClass("id", Long.class).get();
+            String id = ctx.pathParamAsClass("id", String.class).get();
             System.out.println(id);
 
             Appointment appointment = appointmentRepository.getById(id);
