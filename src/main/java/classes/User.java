@@ -4,10 +4,16 @@ import exception.SunriseException;
 
 public class User {
 
+
+
+    private long id;
     private String name;
     private String email;
     private String password;
 
+
+    public long getId() {return id;}
+    public void setId(long id) {this.id = id;}
 
     public String getName() {return name;}
     public void setName(String name) {this.name = name;}
@@ -63,4 +69,12 @@ public class User {
 
     }
 
+    @Override
+    public String toString(){
+        return "User { "     +
+                "id: "       + id       + ", " +
+                "name: "     + name     + ", " +
+                "email: "    + email    + ", " +
+                "password: " + password;
+    }
 }

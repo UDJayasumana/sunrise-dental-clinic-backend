@@ -1,9 +1,12 @@
 package org.example;
 
+import classes.AuthGuard;
+import controller.AppointmentController;
 import controller.UserController;
 import database.BaseDatabase;
 import database.PostgresDatabase;
 import io.javalin.Javalin;
+import repository.AppointmentRepository;
 import repository.UserRepository;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -13,8 +16,8 @@ public class Main {
         try{
             BaseDatabase db = new PostgresDatabase();
 
-            UserRepository userRepo = new UserRepository(db);
-            UserController userController = new UserController(userRepo);
+            UserController userController = new UserController(db);
+            AppointmentController appointmentController = new AppointmentController(db);
 
             // Configure Javalin with CORS plugin enabled
             Javalin app = Javalin.create(config -> {
@@ -31,6 +34,13 @@ public class Main {
 
             app.post("/api/signup", userController::registerUser);
             app.post("/api/signin", userController::loginUser);
+            app.get("/api/logout", userController::logoutUser);
+            app.post("/api/verify", userController::verifyToken);
+            app.get("/api/refresh", userController::refreshTokens);
+            app.get("/api/user/{id}", userController::getUserById);
+            app.post("/api/appointment", appointmentController::createAppointment);
+            app.get("/api/appointment", appointmentController::getAllAppointments);
+            app.get("/api/appointment/{id}", appointmentController::getAppointmentById);
 
             System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
 

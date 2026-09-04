@@ -1,5 +1,6 @@
 package repository;
 
+import classes.Appointment;
 import classes.User;
 import database.BaseDatabase;
 import org.mindrot.jbcrypt.BCrypt;
@@ -48,6 +49,31 @@ public class UserRepository {
 
     }
 
+    public User getById(long userId) throws Exception{
+        String sql = "SELECT id, name, email FROM users WHERE id = ?";
+
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)){
+            // Set the ID parameter
+            pstmt.setLong(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()){
+                if (rs.next()) {
+                    User user = new User();
+
+                    // Map database columns to your Appointment object setters
+                    user.setId(rs.getLong("id"));
+                    user.setName(rs.getString("name"));
+                    user.setEmail(rs.getString("email"));
+
+                    return user;
+                }
+            }
+
+        }catch (Exception e){
+            throw new IllegalArgumentException("appointment saving failed");
+        }
+        return null;
+    }
 
     public boolean existsByEmail(String email) throws SQLException
     {
@@ -68,7 +94,7 @@ public class UserRepository {
 
     public User findByEmail(String email) throws SQLException {
         String cleanedEmail = email.trim().toLowerCase();
-        String sql = "SELECT name, email, password FROM users WHERE email = ? LIMIT 1";
+        String sql = "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1";
 
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)){
@@ -78,6 +104,7 @@ public class UserRepository {
                 //logger.info("Data: " + rs);
                 if (rs.next()) {
                     User user = new User();
+                    user.setId(rs.getLong("id"));
                     user.setName(rs.getString("name"));
                     user.setEmail(rs.getString("email"));
                     user.setPassword(rs.getString("password"));
