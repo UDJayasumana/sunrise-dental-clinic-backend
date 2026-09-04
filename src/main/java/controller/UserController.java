@@ -1,26 +1,38 @@
 package controller;
 
 
+import classes.Appointment;
+import classes.AuthGuard;
+import classes.RefreshToken;
 import classes.User;
+import database.BaseDatabase;
 import exception.SunriseException;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
 import org.mindrot.jbcrypt.BCrypt;
+import repository.RefreshTokenRepository;
 import repository.UserRepository;
 import utility.JwtUtil;
 
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 public class UserController {
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private static final Logger logger = Logger.getLogger(UserController.class.getName());
 
-    public UserController(UserRepository userRepository)
-    {
-        this.userRepository = userRepository;
+    public UserController(BaseDatabase baseDatabase) throws SQLException {
+        this.userRepository = new UserRepository(baseDatabase);
+        this.refreshTokenRepository = new RefreshTokenRepository(baseDatabase);
     }
 
 
@@ -62,6 +74,7 @@ public class UserController {
 
             //Find user in the database
             User existingUser = userRepository.findByEmail(loginAttempt.getEmail());
+            System.out.println(existingUser);
 
             if(existingUser == null){
                 //System.out.println("DEBUG: User not found in database!");
@@ -94,19 +107,23 @@ public class UserController {
             }
 
             //Generate JWT Token
-            String token = JwtUtil.generateToken(existingUser.getEmail());
+            String accessToken  = JwtUtil.generateAccessToken(existingUser.getId());
+            String refreshToken = JwtUtil.generateRefreshToken();
 
-            // 1. Create the cookie object using name and value
-            Cookie myCookie = new Cookie("srdAT", token);
+            Cookie accessCookie = JwtUtil.getCookie("access", "srdAT", accessToken);
+            Cookie refreshCookie = JwtUtil.getCookie("refresh", "srdRT", refreshToken);
 
-            // 2. Set the additional attributes using its setter methods
-            myCookie.setMaxAge(86400);
-            myCookie.setPath("/");
-            myCookie.setHttpOnly(true);
-            myCookie.setSecure(false);
+            //Delete if available any previous refresh tokens
+            refreshTokenRepository.deleteByUserId(String.valueOf(existingUser.getId()));
+
+            Date expiryDate = Date.from(Instant.now().plus(3, ChronoUnit.DAYS));
+            Timestamp expiryDateTimestamp = new Timestamp(expiryDate.getTime());
+            RefreshToken refreshTokeen = new RefreshToken(UUID.fromString(refreshToken), String.valueOf(existingUser.getId()), expiryDateTimestamp, false);
+            refreshTokenRepository.post(refreshTokeen);
 
             //Pass the Cookie object to the context
-            ctx.cookie(myCookie);
+            ctx.cookie(accessCookie);
+            ctx.cookie(refreshCookie);
 
             //Send the login success response
             Map<String, Object> response = new HashMap<>();
@@ -128,44 +145,81 @@ public class UserController {
         }
     }
 
+    public void logoutUser(Context ctx) throws Exception {
+        try {
+            String accessTokenValue = ctx.cookie("srdAT");
 
+            if (accessTokenValue != null) {
+                String userId = JwtUtil.extractUserId(accessTokenValue);
+                System.out.println("UserID: " + userId);
+                refreshTokenRepository.deleteByUserId(userId);
+            }
 
-//    public void put(Context ctx) {
-//        try {
-//            String payload = ctx.body();
-//           // userRepository.put(payload);
-//            ctx.status(200).json("{\"message\": \"Resource updated successfully\"}");
-//        } catch (Exception e) {
-//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-//        }
-//    }
+            //Clear the cookies on the client browser
+            ctx.removeCookie("srdAT");
+            ctx.removeCookie("srdRT");
 
-//    public void patch(Context ctx) {
-//        try {
-//            String payload = ctx.body();
-//            //userRepository.patch(payload);
-//            ctx.status(200).json("{\"message\": \"Resource patched successfully\"}");
-//        } catch (Exception e) {
-//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-//        }
-//    }
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", 200);
+            response.put("message", "LOGOUT_SUCCESS");
+            response.put("data", null);
 
-//    public void delete(Context ctx) {
-//        try {
-//            String idParam = ctx.pathParam("id");
-//
-//            Object id;
-//            try {
-//                id = Integer.parseInt(idParam);
-//            } catch (NumberFormatException e) {
-//                id = idParam;
-//            }
-//
-//            //userRepository.delete(id);
-//            ctx.status(200).json("{\"message\": \"Resource deleted successfully for ID: " + id + "\"}");
-//        } catch (Exception e) {
-//            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
-//        }
-//    }
+            ctx.status(200).json(response);
+        }catch(Exception e){
+            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    public void getUserById(Context ctx){
+        try{
+            long id = ctx.pathParamAsClass("id", Long.class).get();
+            System.out.println(id);
+
+            User user = userRepository.getById(id);
+
+            if (user != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 200);
+                response.put("message", "USER_FETCHED");
+                response.put("data", user);
+
+                ctx.status(200).json(response);
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 404);
+                response.put("message", "USER_NOT_FOUND");
+                response.put("data", null);
+
+                ctx.status(404).json(response);
+            }
+
+        }catch (SunriseException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", e.getStatusCode());
+            response.put("message", e.getMessage());
+            response.put("errors", Map.of(e.getField(), e.getValue()));
+
+            ctx.status(e.getStatusCode()).json(response);
+        } catch (Exception e) {
+            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    public void verifyToken(Context ctx) {
+        // Run the guard check; if it fails, it already sent the 401 response
+        if (!AuthGuard.verifyToken(ctx)) {
+            return;
+        }
+
+        // If valid, proceed with your controller logic
+        String userId = ctx.attribute("userId");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("statusCode", 200);
+        response.put("message", "VERIFIED");
+        response.put("data", Map.of("userId", userId));
+
+        ctx.status(200).json(response);
+    }
 
 }

@@ -1,10 +1,12 @@
 package controller;
 
 import classes.Appointment;
+import database.BaseDatabase;
 import exception.SunriseException;
 import io.javalin.http.Context;
 import repository.AppointmentRepository;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,9 +14,8 @@ import java.util.Map;
 public class AppointmentController {
     private final AppointmentRepository appointmentRepository;
 
-    public AppointmentController(AppointmentRepository appointmentRepository)
-    {
-        this.appointmentRepository = appointmentRepository;
+    public AppointmentController(BaseDatabase baseDatabase) throws SQLException {
+        this.appointmentRepository = new AppointmentRepository(baseDatabase);
     }
 
     public void createAppointment(Context ctx){
