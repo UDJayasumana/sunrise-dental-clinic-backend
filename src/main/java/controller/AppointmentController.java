@@ -84,8 +84,11 @@ public class AppointmentController {
     }
 
     public void getAllAppointments(Context ctx) {
+
+        String searchTerm = ctx.queryParam("searchTerm");
+
         try {
-            List<Appointment> appointments = appointmentRepository.getAll();
+            List<Appointment> appointments = appointmentRepository.getAll(searchTerm);
 
             Map<String, Object> response = new HashMap<>();
             response.put("statusCode", 200);

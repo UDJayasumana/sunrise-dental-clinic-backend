@@ -93,12 +93,24 @@ public class AppointmentRepository {
         return null;
     }
 
-    public List<Appointment> getAll() throws Exception{
-        String sql = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+    public List<Appointment> getAll(String searchTerm) throws Exception{
+       // String sql = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+
+        String query = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+        boolean hasFilter = (searchTerm != null && !searchTerm.trim().isEmpty());
+        if (hasFilter) {
+            query += " WHERE appo_num LIKE ?";
+        }
 
         List<Appointment> appointments = new ArrayList<>();
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
+        try (PreparedStatement pstmt = connection.prepareStatement(query)){
+
+            // Set parameter if filter exists
+            if (hasFilter) {
+                pstmt.setString(1, "%" + searchTerm.trim() + "%");
+            }
+
             try (ResultSet rs = pstmt.executeQuery()){
                 while (rs.next()) {
                     Appointment appointment = new Appointment();
