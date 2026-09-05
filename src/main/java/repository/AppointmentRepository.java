@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.sql.Statement.RETURN_GENERATED_KEYS;
+
 public class AppointmentRepository {
     private final BaseDatabase database;
     private final Connection connection;
@@ -21,48 +23,66 @@ public class AppointmentRepository {
 
     public void post(Appointment appointment) throws Exception{
 
-        String sql = "INSERT INTO appointments (patient_name, address, contact_number, dentist_name, treatment_type) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO appointments (patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist) VALUES (?, ?::timestamp, ?, ?, ?, ?, ?)";
 
-        try(PreparedStatement stmt = connection.prepareStatement(sql)){
+        try(PreparedStatement stmt = connection.prepareStatement(sql, RETURN_GENERATED_KEYS)){
 
+           // stmt.setString(1, appointment.getAppoNum());
             stmt.setString(1, appointment.getPatientName());
-            stmt.setString(2, appointment.getAddress());
-            stmt.setString(3, appointment.getContactNumber());
-            stmt.setString(4, appointment.getDentistName());
-            stmt.setString(5, appointment.getTreatmentType());
+            stmt.setString(2, appointment.getAppoDateTime());
+            stmt.setString(3, appointment.getTreatmentType());
+            stmt.setInt(4, appointment.getAge());
+            stmt.setString(5, appointment.getAddress());
+            stmt.setString(6, appointment.getContactNum());
+            stmt.setString(7, appointment.getDentist());
+
             stmt.executeUpdate();
-            System.out.println("Inserted successfully!");
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    int generatedId = generatedKeys.getInt(1);
+
+                    String appoNum = String.format("APT-%05d", generatedId);
+                    String updateSql = "UPDATE appointments SET appo_num = ? WHERE id = ?";
+                    try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
+                        updateStmt.setString(1, appoNum);
+                        updateStmt.setInt(2, generatedId);
+                        updateStmt.executeUpdate();
+                    }
+                }
+            }
+
+            System.out.println("Inserted successfully with custom appointment number!");
 
         }catch (Exception e){
-            throw new IllegalArgumentException("appointment saving failed");
+            throw new IllegalArgumentException("appointment saving failed" + e.getMessage());
         }
 
 
     }
 
-    public Appointment getById(long appointmentNumber)throws Exception{
-        String sql = "SELECT appointment_number, patient_name, address, contact_number, dentist_name, treatment_type, created_at " +
-                      "FROM appointments WHERE appointment_number = ?";
+    public Appointment getById(String appoNum)throws Exception{
+        String sql = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist " +
+                      "FROM appointments WHERE appo_num = ?";
 
         try(PreparedStatement pstmt = connection.prepareStatement(sql)){
 
             // Set the ID parameter
-            pstmt.setLong(1, appointmentNumber);
+            pstmt.setString(1, appoNum);
 
             try (ResultSet rs = pstmt.executeQuery()){
                 if (rs.next()) {
                     Appointment appointment = new Appointment();
 
                     // Map database columns to your Appointment object setters
-                    appointment.setAppointmentNumber(rs.getLong("appointment_number"));
+                    appointment.setId(rs.getLong("id"));
+                    appointment.setAppoNum(rs.getString("appo_num"));
                     appointment.setPatientName(rs.getString("patient_name"));
-                    appointment.setAddress(rs.getString("address"));
-                    appointment.setContactNumber(rs.getString("contact_number"));
-                    appointment.setDentistName(rs.getString("dentist_name"));
+                    appointment.setAppoDateTime(rs.getString("appo_date_time"));
                     appointment.setTreatmentType(rs.getString("treatment_type"));
-
-                    // If you have a setter for the timestamp/created_at, you can map it too:
-                    // appointment.setCreatedAt(rs.getTimestamp("created_at"));
+                    appointment.setAge(rs.getInt("age"));
+                    appointment.setAddress(rs.getString("address"));
+                    appointment.setContactNum(rs.getString("contact_num"));
+                    appointment.setDentist(rs.getString("dentist"));
 
                     return appointment;
                 }
@@ -73,21 +93,38 @@ public class AppointmentRepository {
         return null;
     }
 
-    public List<Appointment> getAll() throws Exception{
-        String sql = "SELECT appointment_number, patient_name, address, contact_number, dentist_name, treatment_type, created_at FROM appointments";
+    public List<Appointment> getAll(String searchTerm) throws Exception{
+       // String sql = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+
+        String query = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+        boolean hasFilter = (searchTerm != null && !searchTerm.trim().isEmpty());
+        if (hasFilter) {
+            query += " WHERE appo_num LIKE ?";
+        }
 
         List<Appointment> appointments = new ArrayList<>();
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
+        try (PreparedStatement pstmt = connection.prepareStatement(query)){
+
+            // Set parameter if filter exists
+            if (hasFilter) {
+                pstmt.setString(1, "%" + searchTerm.trim() + "%");
+            }
+
             try (ResultSet rs = pstmt.executeQuery()){
                 while (rs.next()) {
                     Appointment appointment = new Appointment();
-                    appointment.setAppointmentNumber(rs.getLong("appointment_number"));
+
+                    // Map database columns to your Appointment object setters
+                    appointment.setId(rs.getLong("id"));
+                    appointment.setAppoNum(rs.getString("appo_num"));
                     appointment.setPatientName(rs.getString("patient_name"));
-                    appointment.setAddress(rs.getString("address"));
-                    appointment.setContactNumber(rs.getString("contact_number"));
-                    appointment.setDentistName(rs.getString("dentist_name"));
+                    appointment.setAppoDateTime(rs.getString("appo_date_time"));
                     appointment.setTreatmentType(rs.getString("treatment_type"));
+                    appointment.setAge(rs.getInt("age"));
+                    appointment.setAddress(rs.getString("address"));
+                    appointment.setContactNum(rs.getString("contact_num"));
+                    appointment.setDentist(rs.getString("dentist"));
 
                     appointments.add(appointment);
                 }
