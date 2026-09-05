@@ -5,6 +5,7 @@ import database.BaseDatabase;
 import exception.SunriseException;
 import io.javalin.http.Context;
 import repository.AppointmentRepository;
+import response.PaginatedAppointmentsResponse;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -86,14 +87,24 @@ public class AppointmentController {
     public void getAllAppointments(Context ctx) {
 
         String searchTerm = ctx.queryParam("searchTerm");
+        String pageStr = ctx.queryParam("page");
+        String rowsStr = ctx.queryParam("rows");
 
         try {
-            List<Appointment> appointments = appointmentRepository.getAll(searchTerm);
+            // Default values if pagination params are missing
+            int page = (pageStr != null && !pageStr.isEmpty()) ? Integer.parseInt(pageStr) : 1;
+            int rows = (rowsStr != null && !rowsStr.isEmpty()) ? Integer.parseInt(rowsStr) : 5;
+
+            PaginatedAppointmentsResponse result = appointmentRepository.getAll(searchTerm, page, rows);
+
+            Map<String, Object> dataMap = new HashMap<>();
+            dataMap.put("appointments", result.getAppointments());
+            dataMap.put("totalCount", result.getTotalCount());
 
             Map<String, Object> response = new HashMap<>();
             response.put("statusCode", 200);
             response.put("message", "APPOINTMENTS_FETCHED");
-            response.put("data", appointments); // Returns the list of appointments as JSON
+            response.put("data", dataMap); // Returns the list of appointments as JSON
 
             ctx.status(200).json(response);
 
