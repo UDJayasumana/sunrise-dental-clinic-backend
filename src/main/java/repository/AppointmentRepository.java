@@ -2,6 +2,7 @@ package repository;
 
 import classes.Appointment;
 import database.BaseDatabase;
+import response.PaginatedAppointmentsResponse;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -93,23 +94,55 @@ public class AppointmentRepository {
         return null;
     }
 
-    public List<Appointment> getAll(String searchTerm) throws Exception{
-       // String sql = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+    public PaginatedAppointmentsResponse getAll(String searchTerm, int page, int rows) throws Exception{
 
-        String query = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments";
+
+
+        int totalCount = 0;
+
         boolean hasFilter = (searchTerm != null && !searchTerm.trim().isEmpty());
-        if (hasFilter) {
-            query += " WHERE appo_num LIKE ?";
+        String baseWhereClause = hasFilter ? " WHERE appo_num LIKE ?" : "";
+
+        //Count query
+        String countQuery = "SELECT COUNT(*) FROM appointments" + baseWhereClause;
+
+        //Execute Count query
+        try (PreparedStatement countPstmt = connection.prepareStatement(countQuery)) {
+            if (hasFilter) {
+                countPstmt.setString(1, "%" + searchTerm.trim() + "%");
+            }
+            try (ResultSet rs = countPstmt.executeQuery()) {
+                if (rs.next()) {
+                    totalCount = rs.getInt(1);
+                }
+            }
+        }catch (Exception e) {
+            throw new IllegalArgumentException("Failed to count appointments: " + e.getMessage(), e);
         }
 
-        List<Appointment> appointments = new ArrayList<>();
+        //Add pagination query
+        String dataQuery = "SELECT id, appo_num, patient_name, appo_date_time, treatment_type, age, address, contact_num, dentist FROM appointments"
+                + baseWhereClause
+                + " LIMIT ? OFFSET ?";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(query)){
+        List<Appointment> appointments = new ArrayList<>();
+        int offset = (page - 1) * rows;
+
+        try (PreparedStatement pstmt = connection.prepareStatement(dataQuery)){
 
             // Set parameter if filter exists
             if (hasFilter) {
                 pstmt.setString(1, "%" + searchTerm.trim() + "%");
+                pstmt.setInt(2, rows);
+                pstmt.setInt(3, offset);
             }
+            else
+            {
+                pstmt.setInt(1, rows);
+                pstmt.setInt(2, offset);
+            }
+
+
 
             try (ResultSet rs = pstmt.executeQuery()){
                 while (rs.next()) {
@@ -130,8 +163,8 @@ public class AppointmentRepository {
                 }
             }
         }catch (Exception e){
-            throw new IllegalArgumentException("appointment saving failed");
+            throw new IllegalArgumentException("Fetching appointments failed: " + e.getMessage(), e);
         }
-        return appointments;
+        return new PaginatedAppointmentsResponse(appointments, totalCount);
     }
 }
