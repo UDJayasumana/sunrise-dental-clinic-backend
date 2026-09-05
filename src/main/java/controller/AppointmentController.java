@@ -123,6 +123,34 @@ public class AppointmentController {
         }
     }
 
+    public void deleteAppointmentById(Context ctx){
+        try{
+            String id = ctx.pathParamAsClass("id", String.class).get();
+
+            boolean isDeleted = appointmentRepository.deleteById(id);
+
+            if (isDeleted) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 200);
+                response.put("message", "APPOINTMENT_DELETED_SUCCESS");
+                response.put("data", null);
+
+                ctx.status(200).json(response);
+            }else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 404);
+                response.put("message", "APPOINTMENT_NOT_FOUND");
+                response.put("data", null);
+
+                ctx.status(404).json(response);
+            }
+
+
+        } catch (Exception e) {
+            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+
+    }
 
     public void getAllAppointments(Context ctx) {
 

@@ -124,6 +124,21 @@ public class AppointmentRepository {
         return null;
     }
 
+    public boolean deleteById(String appoNum)throws Exception{
+        String sql = "DELETE FROM appointments WHERE appo_num = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql))
+        {
+            pstmt.setString(1, appoNum);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        }catch (Exception e) {
+            throw new IllegalArgumentException("appointment deletion failed");
+        }
+
+    }
+
+
     public PaginatedAppointmentsResponse getAll(String searchTerm, int page, int rows) throws Exception{
 
 
