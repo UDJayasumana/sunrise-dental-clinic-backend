@@ -41,6 +41,7 @@ public class Main {
             app.post("/api/appointment", appointmentController::createAppointment);
             app.get("/api/appointment", appointmentController::getAllAppointments);
             app.get("/api/appointment/{id}", appointmentController::getAppointmentById);
+            app.put("/api/appointment/{id}", appointmentController::updateAppointmentById);
 
             System.out.println("Javalin API server started successfully at http://localhost:3000/api/users");
 

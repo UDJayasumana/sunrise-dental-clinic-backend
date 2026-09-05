@@ -84,6 +84,46 @@ public class AppointmentController {
         }
     }
 
+    public void updateAppointmentById(Context ctx)
+    {
+        try{
+            String id = ctx.pathParamAsClass("id", String.class).get();
+
+            Appointment appointmentBody = ctx.bodyAsClass(Appointment.class);
+
+            appointmentBody.validate();
+
+            Appointment updatedAppointment = appointmentRepository.updateById(id, appointmentBody);
+
+            if (updatedAppointment != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 200);
+                response.put("message", "APPOINTMENT_UPDATED_SUCCESS");
+                response.put("data", updatedAppointment);
+
+                ctx.status(200).json(response);
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("statusCode", 404);
+                response.put("message", "APPOINTMENT_NOT_FOUND");
+                response.put("data", null);
+
+                ctx.status(404).json(response);
+            }
+
+        }catch (SunriseException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", e.getStatusCode());
+            response.put("message", e.getMessage());
+            response.put("errors", Map.of(e.getField(), e.getValue()));
+
+            ctx.status(e.getStatusCode()).json(response);
+        } catch (Exception e) {
+            ctx.status(500).json("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
     public void getAllAppointments(Context ctx) {
 
         String searchTerm = ctx.queryParam("searchTerm");
