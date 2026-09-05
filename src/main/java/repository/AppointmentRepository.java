@@ -94,6 +94,36 @@ public class AppointmentRepository {
         return null;
     }
 
+    public Appointment updateById(String appoNum, Appointment appointment) throws Exception
+    {
+        String sql = "UPDATE appointments SET patient_name = ?, appo_date_time = ?::timestamp, treatment_type = ?," +
+                     "age = ?, address = ?, contact_num = ?, dentist = ? WHERE appo_num = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            // Set parameters from the Appointment object
+            pstmt.setString(1, appointment.getPatientName());
+            pstmt.setString(2, appointment.getAppoDateTime());
+            pstmt.setString(3, appointment.getTreatmentType());
+            pstmt.setInt(4, appointment.getAge());
+            pstmt.setString(5, appointment.getAddress());
+            pstmt.setString(6, appointment.getContactNum());
+            pstmt.setString(7, appointment.getDentist());
+
+            // Set the WHERE clause parameter (target appointment number)
+            pstmt.setString(8, appoNum);
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                // Returns the updated appointment object if successful
+                return appointment;
+            }
+
+        }catch (Exception e) {
+            throw new IllegalArgumentException("appointment update failed: " + e.getMessage());
+        }
+        return null;
+    }
+
     public PaginatedAppointmentsResponse getAll(String searchTerm, int page, int rows) throws Exception{
 
 
